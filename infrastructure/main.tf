@@ -40,13 +40,28 @@ resource "google_secret_manager_secret_version" "costor_discord_webhook_url_vers
 # 3. Cloud Scheduler - Runs daily at 9:00 AM JST
 resource "google_cloud_scheduler_job" "costor_scheduler" {
   name      = "costor-scheduler"
-  schedule  = "0 9 * * *"
+  schedule  = "*/5 * * * *"
   time_zone = "Asia/Tokyo"
 
 
   http_target {
     http_method = "GET"
-    uri         = "https://REGION-PROJECT_ID.cloudfunctions.net/costor-notify"
+    uri         = "https://asia-northeast1-my-project-458514.cloudfunctions.net/costor-notify"
+    
+    oidc_token {
+      service_account_email = google_service_account.costor_scheduler_sa.email
+    }
   }
 
+}
+
+resource "google_service_account" "costor_scheduler_sa" {
+  account_id   = "costor-scheduler"
+  display_name = "Costor Scheduler Invoker"
+}
+
+resource "google_project_iam_member" "costor_invoke_permission" {
+  project = var.project
+  role    = "roles/run.invoker"
+  member  = "serviceAccount:${google_service_account.costor_scheduler_sa.email}"
 }

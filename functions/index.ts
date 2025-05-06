@@ -1,5 +1,4 @@
 import { BigQuery } from "@google-cloud/bigquery";
-import fetch from "node-fetch";
 
 // 環境変数
 const datasetId = process.env.DATASET_ID!;
@@ -24,15 +23,19 @@ export const main = async (req: any, res: any) => {
       ORDER BY cost DESC
     `;
 
-    const [job] = await bigquery.createQueryJob({ query });
-    const [rows] = await job.getQueryResults();
+    let content = "";
+    try {
+      const [job] = await bigquery.createQueryJob({ query });
+      const [rows] = await job.getQueryResults();
+      const total = rows.reduce((sum, row) => sum + Number(row.cost), 0);
+      const costList = rows
+        .map((r: any) => `・${r.project}: ¥${Number(r.cost).toLocaleString()}`)
+        .join("\n");
 
-    const total = rows.reduce((sum, row) => sum + Number(row.cost), 0);
-    const costList = rows.map(
-      (r: any) => `・${r.project}: ¥${Number(r.cost).toLocaleString()}`
-    ).join("\n");
-
-    const content = `**[Costor] ${ymd} のGCP料金レポート**\n合計: ¥${total.toLocaleString()}\n${costList}`;
+      content = `**[Costor] ${ymd} のGCP料金レポート**\n合計: ¥${total.toLocaleString()}\n${costList}`;
+    } catch (error) {
+      content = `課金データのテーブルがまだ作成されていません。`;
+    }
 
     await fetch(webhookUrl, {
       method: "POST",

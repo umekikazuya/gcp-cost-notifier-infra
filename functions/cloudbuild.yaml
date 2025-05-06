@@ -1,0 +1,22 @@
+steps:
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['ci']
+
+  - name: 'gcr.io/cloud-builders/npm'
+    args: ['run', 'build']
+
+  - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
+    args:
+      - gcloud
+      - functions
+      - deploy
+      - costor-notify
+      - --gen2
+      - --runtime=nodejs20
+      - --region=asia-northeast1
+      - --source=.
+      - --entry-point=main
+      - --trigger-http
+      - --set-env-vars=DATASET_ID=costor_billing_export
+      - --set-secrets=DISCORD_WEBHOOK_URL=costor-discord-token:latest
+      - --allow-unauthenticated
