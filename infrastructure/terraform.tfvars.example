@@ -1,0 +1,4 @@
+project             = "your-gcp-project-id"
+discord_webhook_url = "your_messenger_channel_token_here"
+github_owner        = "your-github-username"
+github_repo         = "costor"
